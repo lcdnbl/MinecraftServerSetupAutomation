@@ -2,12 +2,12 @@
 
 MC_WORLD_NAME=${1:-Hector}
 VANILLA_VERSION="1.16"
-MC_DIR="/opt/${MC_WORLD_NAME}"
+MC_DIR="${HOME}/mc/${MC_WORLD_NAME}"
 PLUGIN_DIR="${MC_DIR}/plugins"
-LOCAL_PLUGIN_REPO="/opt/mcpluginrepo"
+LOCAL_PLUGIN_REPO="${HOME}/mc/mcpluginrepo"
 
 # create directory and download latest paper server
-mkdir ${MC_DIR}
+mkdir -p ${MC_DIR}
 wget https://papermc.io/ci/job/Paper-${VANILLA_VERSION}/lastSuccessfulBuild/artifact/paperclip.jar -O ${MC_DIR}/paperclip.jar
 
 # create plugins directory
@@ -24,11 +24,13 @@ rm ${PLUGIN_DIR}/EssentialsXXMPP*.jar
 rm ${PLUGIN_DIR}/EssentialsXGeo*.jar
 rm ${PLUGIN_DIR}/EssentialsXAntiBuild*.jar
 
+# Plugin:  Vault  :  redirect URL to get latest
+curl -s https://api.github.com/repos/MilkBowl/Vault/releases/latest | grep browser_download_url | cut -d '"' -f 4 | wget -i - -P ${PLUGIN_DIR}
+# https://www.spigotmc.org/resources/vault.34315/download?version=344916
+
 # Because spigotmc.org downloads are protected by Cloudflare, etc. the following wgets won't work,
 # we will instead need to manually download the spigot plugins, rsync them into LOCAL_PLUGIN_REPO
 cp ${LOCAL_PLUGIN_REPO}/* ${PLUGIN_DIR}/
-# Plugin:  Vault
-#wget https://www.spigotmc.org/resources/vault.34315/download?version=344916 -P ${PLUGIN_DIR}
 # Plugin:  HorseTpWithMe
 #wget https://www.spigotmc.org/resources/horsetpwithme.8186/download?version=342775 -O ${PLUGIN_DIR}/HorseTpWithMe.jar
 # Plugin:  ChopTree
