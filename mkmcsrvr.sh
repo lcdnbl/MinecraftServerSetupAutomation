@@ -90,8 +90,11 @@ EOM
 # create launch script
 /bin/cat <<EOM > ./run_${MC_WORLD_NAME}.sh
 #!/bin/bash
+# if not already running in screen, start screen first
+if [ -z "\$STY" ]; then exec screen -dm -S minecraftsrvr /bin/bash "\$0"; fi
 cd ${MC_DIR}
 java -Xmx3G -Xms3G -jar paperclip.jar nogui
+#java -Xmx1024M -Xms1024M -jar paperclip.jar nogui
 EOM
 chmod +x run_${MC_WORLD_NAME}.sh
 
