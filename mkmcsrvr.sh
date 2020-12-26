@@ -35,8 +35,6 @@ cp ${LOCAL_PLUGIN_REPO}/* ${PLUGIN_DIR}/
 #wget https://www.spigotmc.org/resources/horsetpwithme.8186/download?version=342775 -O ${PLUGIN_DIR}/HorseTpWithMe.jar
 # Plugin:  ChopTree
 #wget https://www.spigotmc.org/resources/choptree2.67585/download?version=282300 -O ${PLUGIN_DIR}/ChopTree2.jar
-# Plugin:  BetterRTP
-#wget https://www.spigotmc.org/resources/betterrtp-random-wild-teleport.36081/download?version=360792 -P ${PLUGIN_DIR}
 
 # Plugin:  luck perms
 wget https://ci.lucko.me/job/LuckPerms/lastSuccessfulBuild/artifact/*zip*/archive.zip -O ${PLUGIN_DIR}/luckperms.zip
@@ -57,7 +55,6 @@ mkdir -p ${LP_YAMLSTR_GRPS_DIR}
 /bin/cat <<EOM > ${LP_YAMLSTR_GRPS_DIR}/default.yml
 name: default
 permissions:
-- betterrtp.world.*
 - essentials.back
 - essentials.back.ondeath
 - essentials.delhome
@@ -73,6 +70,7 @@ permissions:
 - essentials.tpaccept
 - essentials.tpahere
 - essentials.tpdeny
+- essentials.tpr
 - essentials.warp
 - essentials.workbench
 EOM
@@ -85,6 +83,7 @@ parents:
 permissions:
 - essentials.setwarp
 - essentials.jump
+- essentials.sethome.multiple.vip
 EOM
 
 # create launch script
@@ -102,8 +101,14 @@ chmod +x run_${MC_WORLD_NAME}.sh
 /bin/cat <<EOM > ./cfg_${MC_WORLD_NAME}_after1strun.sh
 #!/bin/bash
 python3 cfg_yaml_2ndLevel.py -i ${PLUGIN_DIR}/Essentials/config.yml -d essx
-python3 cfg_yaml_2ndLevel.py -i ${PLUGIN_DIR}/BetterRTP/config.yml -d brtp
 sed -i 's/storage-method:.*$/storage-method: yaml/' ${LUCKPERMS_DIR}/config.yml
+echo 'min-range: 1500.0' >> ${PLUGIN_DIR}/Essentials/tpr.yml
+echo 'max-range: 18020.0' >> ${PLUGIN_DIR}/Essentials/tpr.yml
+echo 'center:' >> ${PLUGIN_DIR}/Essentials/tpr.yml
+echo '  world: world' >> ${PLUGIN_DIR}/Essentials/tpr.yml
+echo '  x: 0.0' >> ${PLUGIN_DIR}/Essentials/tpr.yml
+echo '  y: 0.0' >> ${PLUGIN_DIR}/Essentials/tpr.yml
+echo '  z: 80.0' >> ${PLUGIN_DIR}/Essentials/tpr.yml
 EOM
 chmod ugo+x cfg_${MC_WORLD_NAME}_after1strun.sh
 
@@ -122,6 +127,7 @@ essx_parent_node_vals = dict()
 essx_parent_node_vals['sethome-multiple:'] = {'default:':6, 'vip:':15, 'staff':30}
 yaml_dicts['essx'] = essx_parent_node_vals
 
+# better rtp plugin was obsoleted by EssentialsX addition of tpr, but dict remains for example
 brtp_prnt_nd_vals = dict()
 brtp_prnt_nd_vals['Default:'] = {'MaxRadius:':29000, 'MinRadius:':400}
 yaml_dicts['brtp'] = brtp_prnt_nd_vals
