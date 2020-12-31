@@ -1,14 +1,16 @@
 #!/bin/bash
 
 MC_WORLD_NAME=${1:-Hector}
-VANILLA_VERSION="1.16"
+VANILLA_VERSION="1.16.4"
+#VANILLA_VERSION="1.16"
 MC_DIR="${HOME}/mc/${MC_WORLD_NAME}"
 PLUGIN_DIR="${MC_DIR}/plugins"
 LOCAL_PLUGIN_REPO="${HOME}/mc/mcpluginrepo"
 
 # create directory and download latest paper server
 mkdir -p ${MC_DIR}
-wget https://papermc.io/ci/job/Paper-${VANILLA_VERSION}/lastSuccessfulBuild/artifact/paperclip.jar -O ${MC_DIR}/paperclip.jar
+wget https://papermc.io/api/v1/paper/${VANILLA_VERSION}/latest/download -O ${MC_DIR}/paperclip.jar
+# wget https://papermc.io/ci/job/Paper-${VANILLA_VERSION}/lastSuccessfulBuild/artifact/paperclip.jar -O ${MC_DIR}/paperclip.jar
 
 # create plugins directory
 mkdir ${PLUGIN_DIR}
@@ -17,9 +19,11 @@ mkdir ${PLUGIN_DIR}
 # not currently configured
 
 # Plugin:  EssentialsX
-wget https://papermc.io/ci/view/%20%20Plugins/job/EssentialsX/lastSuccessfulBuild/artifact/*zip*/archive.zip -O ${PLUGIN_DIR}/EssX.zip
-unzip -j ${PLUGIN_DIR}/EssX.zip -d ${PLUGIN_DIR}
-rm ${PLUGIN_DIR}/EssX.zip
+curl -s https://api.github.com/repos/EssentialsX/Essentials/releases/latest | grep browser_download_url | cut -d '"' -f 4 | wget -i - -P ${PLUGIN_DIR}
+
+# wget https://papermc.io/ci/view/%20%20Plugins/job/EssentialsX/lastSuccessfulBuild/artifact/*zip*/archive.zip -O ${PLUGIN_DIR}/EssX.zip
+# unzip -j ${PLUGIN_DIR}/EssX.zip -d ${PLUGIN_DIR}
+# rm ${PLUGIN_DIR}/EssX.zip
 rm ${PLUGIN_DIR}/EssentialsXXMPP*.jar
 rm ${PLUGIN_DIR}/EssentialsXGeo*.jar
 rm ${PLUGIN_DIR}/EssentialsXAntiBuild*.jar
