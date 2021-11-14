@@ -2,8 +2,6 @@
 
 MC_WORLD_NAME=${1:-Hector}
 VANILLA_VERSION="1.17.1"
-#VANILLA_VERSION="1.16.4"
-#VANILLA_VERSION="1.16"
 MC_DIR="${HOME}/mc/${MC_WORLD_NAME}"
 PLUGIN_DIR="${MC_DIR}/plugins"
 LOCAL_PLUGIN_REPO="${HOME}/mc/mcpluginrepo"
@@ -50,6 +48,7 @@ rm ${PLUGIN_DIR}/LuckPerms*Velocity*.jar
 rm ${PLUGIN_DIR}/LuckPerms*Nukkit*.jar
 rm ${PLUGIN_DIR}/LuckPerms*Legacy*.jar
 rm ${PLUGIN_DIR}/LuckPerms*Sponge*.jar
+rm ${PLUGIN_DIR}/LuckPerms*Fabric*.jar
 
 # create folder structure for LuckPerms files using YAML for storage
 LUCKPERMS_DIR=${PLUGIN_DIR}/LuckPerms
