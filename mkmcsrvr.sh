@@ -1,14 +1,28 @@
 #!/bin/bash
 
+# REQUIRES: installation of corresponding Java,
+#   curl, wget, unzip, jq
+
+
 MC_WORLD_NAME=${1:-Hector}
-VANILLA_VERSION="1.17.1"
+# Version format changed from x.y.z format for API V2 version query and download
+VANILLA_VERSION="1.19"
 MC_DIR="${HOME}/mc/${MC_WORLD_NAME}"
 PLUGIN_DIR="${MC_DIR}/plugins"
 LOCAL_PLUGIN_REPO="${HOME}/mc/mcpluginrepo"
+# the URL root for the api v2
+PAPER_API_URL_ROOT=https://papermc.io/api/v2/projects/paper
 
 # create directory and download latest paper server
 mkdir -p ${MC_DIR}
-wget https://papermc.io/api/v1/paper/${VANILLA_VERSION}/latest/download -O ${MC_DIR}/paperclip.jar
+#   Get the latest subverion and build number of the most recent build:
+temp="$(curl -sX GET "$PAPER_API_URL_ROOT"/version_group/"$VANILLA_VERSION"/builds -H 'accept: application/json' | jq '.builds [-1].version')"
+temp="${temp%\"}"
+LATEST_SUBVERSION="${temp#\"}"
+RECENT_BUILD_NUM="$(curl -sX GET "$PAPER_API_URL_ROOT"/version_group/"$VANILLA_VERSION"/builds -H 'accept: application/json' | jq '.builds [-1].build')"
+#   Perform actual download
+wget ${PAPER_API_URL_ROOT}/versions/${LATEST_SUBVERSION}/builds/${RECENT_BUILD_NUM}/downloads/paper-${LATEST_SUBVERSION}-${RECENT_BUILD_NUM}.jar -O ${MC_DIR}/paperclip.jar
+# wget https://papermc.io/api/v1/paper/${VANILLA_VERSION}/latest/download -O ${MC_DIR}/paperclip.jar
 # wget https://papermc.io/ci/job/Paper-${VANILLA_VERSION}/lastSuccessfulBuild/artifact/paperclip.jar -O ${MC_DIR}/paperclip.jar
 
 # create plugins directory
@@ -28,8 +42,7 @@ rm ${PLUGIN_DIR}/EssentialsXGeo*.jar
 rm ${PLUGIN_DIR}/EssentialsXAntiBuild*.jar
 
 # Plugin:  Vault  :  redirect URL to get latest
-curl -s https://api.github.com/repos/MilkBowl/Vault/releases/latest | grep browser_download_url | cut -d '"' -f 4 | wget -i - -P ${PLUGIN_DIR}
-# https://www.spigotmc.org/resources/vault.34315/download?version=344916
+curl -s https://api.github.com/repos/MilkBowl/Vault/releases/latest | grep browser_download_url | cut -d '"' -f 4 | wget -i - -P ${PLUGIN_DIR} # https://www.spigotmc.org/resources/vault.34315/download?version=344916
 
 # Because spigotmc.org downloads are protected by Cloudflare, etc. the following wgets won't work,
 # we will instead need to manually download the spigot plugins, rsync them into LOCAL_PLUGIN_REPO
