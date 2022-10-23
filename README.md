@@ -12,7 +12,9 @@ Linux bash scripts and python functions to automate download, install &amp; conf
   - when ready to run server, `./run_<server_name>.sh` as desired
 
 ## Configured in 'header' definitions section of bash script:
-  - 'Vanilla version' of minecraft (1.17.1 at time of writing README)
+  - 'Vanilla version' of minecraft
+      - format x.yy (e.g. 1.19) - scripts will choose latest sub-version (e.g. 1.19.3)
+      - used to be of x.xx.y format (e.g. 1.17.1), but paper api v2 changed this
   - ${HOME}/mc/ is the desired root path for a server install
 
 ## Assumptions of bash script:
