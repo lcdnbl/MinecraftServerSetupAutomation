@@ -40,6 +40,7 @@ curl -s https://api.github.com/repos/EssentialsX/Essentials/releases/latest | gr
 rm ${PLUGIN_DIR}/EssentialsXXMPP*.jar
 rm ${PLUGIN_DIR}/EssentialsXGeo*.jar
 rm ${PLUGIN_DIR}/EssentialsXAntiBuild*.jar
+rm ${PLUGIN_DIR}/EssentialsXDiscord*.jar
 
 # Plugin:  Vault  :  redirect URL to get latest
 curl -s https://api.github.com/repos/MilkBowl/Vault/releases/latest | grep browser_download_url | cut -d '"' -f 4 | wget -i - -P ${PLUGIN_DIR} # https://www.spigotmc.org/resources/vault.34315/download?version=344916
