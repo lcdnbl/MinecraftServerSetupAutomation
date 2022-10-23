@@ -34,6 +34,9 @@ Linux bash scripts and python functions to automate download, install &amp; conf
   - EssentialsX
   - LuckPerms
   
+## LuckPerms command to add a user to a group:
+  - `/lp user <user> group add <group>`
+  
 ## Manually downloaded plugins (in ${HOME}/mc/mcpluginrepo/ by default):
   - Tree Capitator (personal preference)
   - HorseTpWithMe (personal preference)
