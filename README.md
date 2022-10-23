@@ -33,7 +33,9 @@ Linux bash scripts and python functions to automate download, install &amp; conf
   - LuckPerms
   
 ## Manually downloaded plugins (in ${HOME}/mc/mcpluginrepo/ by default):
-  - BetterRTP (the script that adjusts YAML config files after the 1st server run looks for corresponding config)
-  - ChopTree (personal preference)
+  - Tree Capitator (personal preference)
   - HorseTpWithMe (personal preference)
   
+## Previously advocated plugins:
+  - BetterRTP (obsoleted by EssentialsX tpr feature)
+  - ChopTree (not updated for 1.19 API, so dropped in favor of TreeCapitator)
