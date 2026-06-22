@@ -1,29 +1,62 @@
 #!/bin/bash
 
-# REQUIRES: installation of corresponding Java,
-#   curl, wget, unzip, jq
+# REQUIRES: installation of corresponding Java (Java 21+ for MC 1.21 / 26.x),
+#   curl, wget, unzip, python3
 
 
 MC_WORLD_NAME=${1:-Hector}
-# Version format changed from x.y.z format for API V2 version query and download
-VANILLA_VERSION="1.19"
+# VANILLA_VERSION is a Paper "version group" key (see https://fill.papermc.io/v3/projects/paper).
+# The script auto-selects the newest version within the group that has a STABLE build.
+#   - Old numbering groups look like "1.19", "1.21"
+#   - New (2026+) calendar numbering groups look like "26.1", "26.2"
+VANILLA_VERSION="26.1"
 MC_DIR="${HOME}/mc/${MC_WORLD_NAME}"
 PLUGIN_DIR="${MC_DIR}/plugins"
 LOCAL_PLUGIN_REPO="${HOME}/mc/mcpluginrepo"
-# the URL root for the api v2
-PAPER_API_URL_ROOT=https://papermc.io/api/v2/projects/paper
+# PaperMC migrated to the Fill v3 API: the legacy api.papermc.io/v2 stopped getting
+# builds on 2025-12-31 and is shut down on 2026-07-01. Fill v3 requires a
+# non-generic User-Agent that includes a contact URL or email.
+PAPER_API_URL_ROOT="https://fill.papermc.io/v3/projects/paper"
+PAPER_API_USER_AGENT="MinecraftServerSetupAutomation/2.0 (+https://github.com/lcdnbl/MinecraftServerSetupAutomation)"
 
 # create directory and download latest paper server
 mkdir -p ${MC_DIR}
-#   Get the latest subverion and build number of the most recent build:
-temp="$(curl -sX GET "$PAPER_API_URL_ROOT"/version_group/"$VANILLA_VERSION"/builds -H 'accept: application/json' | jq '.builds [-1].version')"
-temp="${temp%\"}"
-LATEST_SUBVERSION="${temp#\"}"
-RECENT_BUILD_NUM="$(curl -sX GET "$PAPER_API_URL_ROOT"/version_group/"$VANILLA_VERSION"/builds -H 'accept: application/json' | jq '.builds [-1].build')"
-#   Perform actual download
-wget ${PAPER_API_URL_ROOT}/versions/${LATEST_SUBVERSION}/builds/${RECENT_BUILD_NUM}/downloads/paper-${LATEST_SUBVERSION}-${RECENT_BUILD_NUM}.jar -O ${MC_DIR}/paperclip.jar
-# wget https://papermc.io/api/v1/paper/${VANILLA_VERSION}/latest/download -O ${MC_DIR}/paperclip.jar
-# wget https://papermc.io/ci/job/Paper-${VANILLA_VERSION}/lastSuccessfulBuild/artifact/paperclip.jar -O ${MC_DIR}/paperclip.jar
+#   Resolve newest STABLE build in the version group, plus its embedded download URL.
+#   (In Fill v3 builds are returned newest-first and the download URL is embedded.)
+read -r LATEST_SUBVERSION PAPER_BUILD_URL PAPER_JAR_NAME < <(
+  python3 - "$PAPER_API_URL_ROOT" "$VANILLA_VERSION" "$PAPER_API_USER_AGENT" <<'PY'
+import json, sys, urllib.request
+
+root, group, ua = sys.argv[1], sys.argv[2], sys.argv[3]
+
+def get(url):
+    req = urllib.request.Request(url, headers={"User-Agent": ua, "Accept": "application/json"})
+    with urllib.request.urlopen(req) as r:
+        return json.load(r)
+
+versions = get(root)["versions"].get(group)
+if not versions:
+    sys.exit("No Paper versions found for group {}".format(group))
+
+for ver in versions:  # newest first
+    builds = get("{}/versions/{}/builds".format(root, ver))
+    stable = [b for b in builds if b.get("channel") == "STABLE"]
+    if stable:
+        dl = stable[0]["downloads"]["server:default"]  # builds newest-first
+        print(ver, dl["url"], dl["name"])
+        break
+else:
+    sys.exit("No STABLE Paper build found in group {}".format(group))
+PY
+)
+
+if [ -z "$PAPER_BUILD_URL" ]; then
+  echo "ERROR: could not resolve a Paper download from the Fill v3 API" >&2
+  exit 1
+fi
+echo "Downloading Paper ${PAPER_JAR_NAME} (MC ${LATEST_SUBVERSION}) ..."
+#   Perform actual download (Fill data host also expects the identifying User-Agent)
+wget --header="User-Agent: ${PAPER_API_USER_AGENT}" "$PAPER_BUILD_URL" -O ${MC_DIR}/paperclip.jar
 
 # create plugins directory
 mkdir ${PLUGIN_DIR}
@@ -31,19 +64,24 @@ mkdir ${PLUGIN_DIR}
 # Plugin:  Protocollib
 # not currently configured
 
-# Plugin:  EssentialsX
-curl -s https://api.github.com/repos/EssentialsX/Essentials/releases/latest | grep browser_download_url | cut -d '"' -f 4 | wget -i - -P ${PLUGIN_DIR}
+# Plugin:  EssentialsX  (download every release asset, then prune unwanted modules)
+# NB: parse the asset URLs with python3 rather than `grep browser_download_url | cut`;
+#     the GitHub API may return minified (single-line) JSON, in which case the
+#     grep|cut pipeline silently grabs the wrong field (the release's api "url").
+curl -s https://api.github.com/repos/EssentialsX/Essentials/releases/latest \
+  | python3 -c "import sys, json; [print(a['browser_download_url']) for a in json.load(sys.stdin)['assets']]" \
+  | wget -i - -P ${PLUGIN_DIR}
 
-# wget https://papermc.io/ci/view/%20%20Plugins/job/EssentialsX/lastSuccessfulBuild/artifact/*zip*/archive.zip -O ${PLUGIN_DIR}/EssX.zip
-# unzip -j ${PLUGIN_DIR}/EssX.zip -d ${PLUGIN_DIR}
-# rm ${PLUGIN_DIR}/EssX.zip
-rm ${PLUGIN_DIR}/EssentialsXXMPP*.jar
-rm ${PLUGIN_DIR}/EssentialsXGeo*.jar
-rm ${PLUGIN_DIR}/EssentialsXAntiBuild*.jar
-rm ${PLUGIN_DIR}/EssentialsXDiscord*.jar
+# Discord* also removes DiscordLink; Geo* removes GeoIP
+rm -f ${PLUGIN_DIR}/EssentialsXXMPP*.jar
+rm -f ${PLUGIN_DIR}/EssentialsXGeo*.jar
+rm -f ${PLUGIN_DIR}/EssentialsXAntiBuild*.jar
+rm -f ${PLUGIN_DIR}/EssentialsXDiscord*.jar
 
-# Plugin:  Vault  :  redirect URL to get latest
-curl -s https://api.github.com/repos/MilkBowl/Vault/releases/latest | grep browser_download_url | cut -d '"' -f 4 | wget -i - -P ${PLUGIN_DIR} # https://www.spigotmc.org/resources/vault.34315/download?version=344916
+# Plugin:  Vault  (same robust JSON parsing as EssentialsX)
+curl -s https://api.github.com/repos/MilkBowl/Vault/releases/latest \
+  | python3 -c "import sys, json; [print(a['browser_download_url']) for a in json.load(sys.stdin)['assets']]" \
+  | wget -i - -P ${PLUGIN_DIR} # was: https://www.spigotmc.org/resources/vault.34315/
 
 # Because spigotmc.org downloads are protected by Cloudflare, etc. the following wgets won't work,
 # we will instead need to manually download the spigot plugins, rsync them into LOCAL_PLUGIN_REPO
@@ -57,12 +95,12 @@ cp ${LOCAL_PLUGIN_REPO}/* ${PLUGIN_DIR}/
 wget https://ci.lucko.me/job/LuckPerms/lastSuccessfulBuild/artifact/*zip*/archive.zip -O ${PLUGIN_DIR}/luckperms.zip
 unzip -j ${PLUGIN_DIR}/luckperms.zip -d ${PLUGIN_DIR}
 rm ${PLUGIN_DIR}/luckperms.zip
-rm ${PLUGIN_DIR}/LuckPerms*Bungee*.jar
-rm ${PLUGIN_DIR}/LuckPerms*Velocity*.jar
-rm ${PLUGIN_DIR}/LuckPerms*Nukkit*.jar
-rm ${PLUGIN_DIR}/LuckPerms*Legacy*.jar
-rm ${PLUGIN_DIR}/LuckPerms*Sponge*.jar
-rm ${PLUGIN_DIR}/LuckPerms*Fabric*.jar
+# Keep only the modern Bukkit/Paper build; delete every other platform jar.
+# (Blocklisting individual platforms is fragile -- upstream keeps adding them,
+#  e.g. Forge / NeoForge / Hytale -- so whitelist the one jar we want instead.
+#  The [0-9] guard keeps LuckPerms-Bukkit-<ver>.jar while dropping the
+#  separate LuckPerms-Bukkit-Legacy-<ver>.jar.)
+find ${PLUGIN_DIR} -maxdepth 1 -name 'LuckPerms-*.jar' ! -name 'LuckPerms-Bukkit-[0-9]*.jar' -delete
 
 # create folder structure for LuckPerms files using YAML for storage
 LUCKPERMS_DIR=${PLUGIN_DIR}/LuckPerms

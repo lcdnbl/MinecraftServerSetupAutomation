@@ -12,27 +12,34 @@ Linux bash scripts and python functions to automate download, install &amp; conf
   - when ready to run server, `./run_<server_name>.sh` as desired
 
 ## Configured in 'header' definitions section of bash script:
-  - 'Vanilla version' of minecraft
-      - format x.yy (e.g. 1.19) - scripts will choose latest sub-version (e.g. 1.19.3)
-      - used to be of x.xx.y format (e.g. 1.17.1), but paper api v2 changed this
+  - 'Vanilla version' of minecraft (`VANILLA_VERSION`, a Paper "version group")
+      - default is `26.1` (resolves to the newest STABLE patch, e.g. 26.1.2)
+      - old numbering groups: `1.19`, `1.21`, etc.
+      - new (2026+) calendar numbering groups: `26.1`, `26.2`, etc.
+      - the script auto-picks the newest version in the group that has a STABLE build,
+        so groups that only have release-candidate builds (e.g. `26.2` as of mid-2026)
+        are skipped with an error rather than installing an unstable jar
   - ${HOME}/mc/ is the desired root path for a server install
 
-## Assumptions of bash script:
-  - ${HOME}/mc/mcpluginreop/ will be manually populated with spigot / bukkit plugins
-  - BetterRTP will be manually downloaded before running
-  - python3 is installed 
-  - java dependencies of minecraft installed
+## Requirements / assumptions of bash script:
+  - `curl`, `wget`, `unzip`, and `python3` are installed
+  - Java is installed: **Java 21+** is required for MC 1.21 / 26.x
+  - ${HOME}/mc/mcpluginrepo/ will be manually populated with spigot / bukkit plugins
+    (these can't be auto-downloaded; spigotmc.org is behind Cloudflare)
   - probably numerous linux package installations that aren't documented here
   
 ## Side effects:
   - aside from the numerous scripts and configs, `cfg_yaml_2ndLevel.py` python script used by one of the created bash scripts will be present
   
 ## Server version downloaded:
-  - paper (aka paperclip), last successful jenkins artifact
+  - paper (aka paperclip), newest STABLE build resolved via the PaperMC Fill v3 API
+    (`fill.papermc.io/v3`). The legacy v2 API stopped getting builds on 2025-12-31 and
+    is shut down on 2026-07-01, so the script was migrated to v3.
 
 ## Plugins fetched by script:
-  - EssentialsX
-  - LuckPerms
+  - EssentialsX (latest GitHub release; XMPP / GeoIP / AntiBuild / Discord modules removed)
+  - Vault (latest GitHub release)
+  - LuckPerms (latest ci.lucko.me build; non-Bukkit/Paper platform jars removed)
   
 ## LuckPerms command to add a user to a group:
   - `/lp user <user> group add <group>`
