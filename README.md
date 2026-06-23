@@ -47,9 +47,26 @@ Linux bash scripts and python functions to automate download, install &amp; conf
   - `/lp user <user> group add <group>`
   
 ## Manually downloaded plugins (in ${HOME}/mc/mcpluginrepo/ by default):
-  - Tree Capitator (personal preference)
+  - [Thizzy'z Tree Feller](https://modrinth.com/plugin/thizzyz-tree-feller) (fell whole trees by chopping one log; supports 26.1.x, GPL-3.0)
+      - replaces the old CrisTreeCapitator, which is no longer maintained for current versions
   - HorseTpWithMe (personal preference)
   
+## Keeping chunks loaded while offline (no plugin):
+  - the old KeepChunks plugin is unmaintained (caps at 1.21.1), so use the vanilla
+    built-ins instead -- they are command-driven, persist across restarts, and won't
+    break on the next MC version
+  - `/forceload add <fromX> <fromZ> [<toX> <toZ>]` -- pins a chunk (or rectangular
+    area) of block coords at a ticking level: random ticks (crop/tree growth), hoppers,
+    redstone, and entities all keep running there while you're offline
+      - `/forceload remove ...`, `/forceload remove all`, `/forceload query` to manage/audit
+      - requires op / permission level 2 (or run from console)
+      - stored in world data, so it survives restarts -- this is the direct KeepChunks replacement
+  - `spawn-chunk-radius` (server.properties) -- keeps a `(2R+1)x(2R+1)` chunk square
+    around world spawn permanently loaded & ticking; modern replacement for Paper's
+    deprecated `keep-spawn-loaded` knobs. `0` disables; keep it modest (2-4) since the
+    whole area ticks 24/7 regardless of player presence
+  - EssentialsX has no chunk-keeping feature -- it's a command suite only
+
 ## Previously advocated plugins:
   - BetterRTP (obsoleted by EssentialsX tpr feature)
   - ChopTree (not updated for 1.19 API, so dropped in favor of TreeCapitator)
