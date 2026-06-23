@@ -23,7 +23,9 @@ Linux bash scripts and python functions to automate download, install &amp; conf
 
 ## Requirements / assumptions of bash script:
   - `curl`, `wget`, `unzip`, and `python3` are installed
-  - Java is installed: **Java 21+** is required for MC 1.21 / 26.x
+  - Java is installed, matching the target MC version:
+    **Java 21** for MC 1.20.5&ndash;1.21.x, **Java 25** for MC 26.x
+    (e.g. Debian: install Eclipse Temurin via the Adoptium apt repo)
   - ${HOME}/mc/mcpluginrepo/ will be manually populated with spigot / bukkit plugins
     (these can't be auto-downloaded; spigotmc.org is behind Cloudflare)
   - probably numerous linux package installations that aren't documented here

@@ -1,6 +1,7 @@
 #!/bin/bash
 
-# REQUIRES: installation of corresponding Java (Java 21+ for MC 1.21 / 26.x),
+# REQUIRES: installation of corresponding Java for the target MC version --
+#   MC 1.20.5 - 1.21.x need Java 21; MC 26.x needs Java 25 -- plus
 #   curl, wget, unzip, python3
 
 
