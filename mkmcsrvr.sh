@@ -6,6 +6,13 @@
 
 
 MC_WORLD_NAME=${1:-Hector}
+# Listen port. Give each world on a host its own port -- two servers on the default
+# 25565 will fight over the bind and the second one to start will fail. 25566, 25567,
+# ... are the conventional choices for additional instances.
+MC_PORT=${2:-25565}
+# JVM heap for the generated launch script. Sized per world, since several servers
+# sharing a host also share its RAM; total heap plus ~1G JVM overhead each must fit.
+MC_HEAP=${3:-3G}
 # VANILLA_VERSION is a Paper "version group" key (see https://fill.papermc.io/v3/projects/paper).
 # The script auto-selects the newest version within the group that has a STABLE build.
 #   - Old numbering groups look like "1.19", "1.21"
@@ -211,10 +218,11 @@ done
 /bin/cat <<EOM > ./run_${MC_WORLD_NAME}.sh
 #!/bin/bash
 # if not already running in screen, start screen first
-if [ -z "\$STY" ]; then exec screen -dm -S minecraftsrvr /bin/bash "\$0"; fi
+# the screen is named per-world so that several servers on one host stay separately
+# addressable, e.g. screen -S mc_${MC_WORLD_NAME} -X stuff "stop\\n"
+if [ -z "\$STY" ]; then exec screen -dm -S mc_${MC_WORLD_NAME} /bin/bash "\$0"; fi
 cd ${MC_DIR}
-java -Xmx3G -Xms3G -jar paperclip.jar nogui
-#java -Xmx1024M -Xms1024M -jar paperclip.jar nogui
+java -Xmx${MC_HEAP} -Xms${MC_HEAP} -jar paperclip.jar nogui
 EOM
 chmod +x run_${MC_WORLD_NAME}.sh
 
@@ -326,6 +334,8 @@ echo "eula=true" >> ${MC_DIR}/eula.txt
 difficulty=normal
 pvp=false
 level-seed=wholy-${MC_WORLD_NAME}
+server-port=${MC_PORT}
+query.port=${MC_PORT}
 EOM
 
 echo "Server ${MC_WORLD_NAME} setup completed"
