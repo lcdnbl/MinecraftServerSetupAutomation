@@ -13,12 +13,13 @@ Linux bash scripts and python functions to automate download, install &amp; conf
 
 ## Configured in 'header' definitions section of bash script:
   - 'Vanilla version' of minecraft (`VANILLA_VERSION`, a Paper "version group")
-      - default is `26.1` (resolves to the newest STABLE patch, e.g. 26.1.2)
+      - default is `26.2` (resolves to the newest STABLE patch)
       - old numbering groups: `1.19`, `1.21`, etc.
       - new (2026+) calendar numbering groups: `26.1`, `26.2`, etc.
       - the script auto-picks the newest version in the group that has a STABLE build,
-        so groups that only have release-candidate builds (e.g. `26.2` as of mid-2026)
-        are skipped with an error rather than installing an unstable jar
+        so versions carrying only release-candidate / ALPHA builds (e.g. `26.2-rc-2`)
+        are skipped rather than installing an unstable jar; if no version in the
+        group has a STABLE build, the script errors out instead of guessing
   - ${HOME}/mc/ is the desired root path for a server install
 
 ## Requirements / assumptions of bash script:

@@ -10,7 +10,7 @@ MC_WORLD_NAME=${1:-Hector}
 # The script auto-selects the newest version within the group that has a STABLE build.
 #   - Old numbering groups look like "1.19", "1.21"
 #   - New (2026+) calendar numbering groups look like "26.1", "26.2"
-VANILLA_VERSION="26.1"
+VANILLA_VERSION="26.2"
 MC_DIR="${HOME}/mc/${MC_WORLD_NAME}"
 PLUGIN_DIR="${MC_DIR}/plugins"
 LOCAL_PLUGIN_REPO="${HOME}/mc/mcpluginrepo"
