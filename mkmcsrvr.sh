@@ -181,7 +181,7 @@ YAML_VAL_RPLCMNT_PTRN = ": {}"   # (restore) colon -space- new value
 # dictionary for -d <dict_name> = essx
 yaml_dicts = dict()
 essx_parent_node_vals = dict()
-essx_parent_node_vals['sethome-multiple:'] = {'default:':6, 'vip:':55, 'staff':90}
+essx_parent_node_vals['sethome-multiple:'] = {'default:':6, 'vip:':85, 'staff':200}
 yaml_dicts['essx'] = essx_parent_node_vals
 
 # better rtp plugin was obsoleted by EssentialsX addition of tpr, but dict remains for example
