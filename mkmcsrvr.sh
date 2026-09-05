@@ -14,10 +14,13 @@ VANILLA_VERSION="26.1"
 MC_DIR="${HOME}/mc/${MC_WORLD_NAME}"
 PLUGIN_DIR="${MC_DIR}/plugins"
 LOCAL_PLUGIN_REPO="${HOME}/mc/mcpluginrepo"
-# Minecraft usernames (space-separated) to seed into the LuckPerms vip group at build
-# time. UUIDs come from the Mojang API, so no first login is required. Online-mode
-# only: in offline mode the server derives a different (v3 name-hash) UUID instead.
+# Minecraft usernames (space-separated) to seed into the LuckPerms vip / staff groups
+# at build time. UUIDs come from the Mojang API, so no first login is required.
+# Online-mode only: in offline mode the server derives a different (v3 name-hash) UUID.
+# Either list may be left empty. staff inherits vip, which inherits default, so a name
+# only needs to appear in the highest list that applies.
 MC_VIP_USERS="RobotButtonTooth"
+MC_STAFF_USERS=""
 # PaperMC migrated to the Fill v3 API: the legacy api.papermc.io/v2 stopped getting
 # builds on 2025-12-31 and is shut down on 2026-07-01. Fill v3 requires a
 # non-generic User-Agent that includes a contact URL or email.
@@ -147,12 +150,36 @@ permissions:
 - essentials.sethome.multiple.vip
 EOM
 
-# seed vip group membership without needing a first login: LuckPerms keys its user
-# files by UUID, and the Mojang API resolves username -> UUID on demand.
+# create LuckPerms staff group permissions
+# Deliberately minimal: it inherits vip (and default through it) and adds only the
+# home tier, mirroring how vip extends default. Add moderation nodes here as needed
+# rather than assuming any -- Essentials' staff home limit is the only thing that
+# breaks without this group existing.
+/bin/cat <<EOM > ${LP_YAMLSTR_GRPS_DIR}/staff.yml
+name: staff
+parents:
+- vip
+permissions:
+- essentials.sethome.multiple.staff
+EOM
+
+# seed group membership without needing a first login: LuckPerms keys its user files
+# by UUID, and the Mojang API resolves username -> UUID on demand.
 LP_YAMLSTR_USRS_DIR=${LUCKPERMS_DIR}/yaml-storage/users
 mkdir -p ${LP_YAMLSTR_USRS_DIR}
 
+# Collect the groups each name was listed in before writing anything, so a user who
+# appears in more than one list gets a single file carrying every group rather than
+# one list's file silently overwriting the other's.
+declare -A LP_USER_GROUPS
 for MCUSER in ${MC_VIP_USERS}; do
+  LP_USER_GROUPS[${MCUSER}]="${LP_USER_GROUPS[${MCUSER}]} vip"
+done
+for MCUSER in ${MC_STAFF_USERS}; do
+  LP_USER_GROUPS[${MCUSER}]="${LP_USER_GROUPS[${MCUSER}]} staff"
+done
+
+for MCUSER in "${!LP_USER_GROUPS[@]}"; do
   RAWID=$(curl -s --max-time 15 \
     "https://api.mojang.com/users/profiles/minecraft/${MCUSER}" \
     | python3 -c "import sys, json; print(json.load(sys.stdin)['id'])" 2>/dev/null)
@@ -160,22 +187,24 @@ for MCUSER in ${MC_VIP_USERS}; do
   # a failed lookup (outage, typo, renamed account) shouldn't abort an otherwise
   # good build -- warn and move on, leaving the user to be added post-login
   if [ -z "${RAWID}" ]; then
-    echo "WARNING: could not resolve UUID for ${MCUSER}; skipping vip seed" >&2
+    echo "WARNING: could not resolve UUID for ${MCUSER}; skipping group seed" >&2
     continue
   fi
 
   # LuckPerms expects the dashed 8-4-4-4-12 form; the API returns it undashed
   UUID=$(echo "${RAWID}" | sed -E 's/(.{8})(.{4})(.{4})(.{4})(.{12})/\1-\2-\3-\4-\5/')
 
-  /bin/cat <<EOM > ${LP_YAMLSTR_USRS_DIR}/${UUID}.yml
-uuid: ${UUID}
-name: ${MCUSER}
-primary-group: default
-parents:
-- default
-- vip
-EOM
-  echo "seeded ${MCUSER} (${UUID}) into the vip group"
+  {
+    echo "uuid: ${UUID}"
+    echo "name: ${MCUSER}"
+    echo "primary-group: default"
+    echo "parents:"
+    echo "- default"
+    for LPGROUP in ${LP_USER_GROUPS[${MCUSER}]}; do
+      echo "- ${LPGROUP}"
+    done
+  } > ${LP_YAMLSTR_USRS_DIR}/${UUID}.yml
+  echo "seeded ${MCUSER} (${UUID}) into:${LP_USER_GROUPS[${MCUSER}]}"
 done
 
 # create launch script
