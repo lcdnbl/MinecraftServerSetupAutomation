@@ -113,11 +113,76 @@ curl -s https://api.github.com/repos/MilkBowl/Vault/releases/latest \
 
 # Because spigotmc.org downloads are protected by Cloudflare, etc. the following wgets won't work,
 # we will instead need to manually download the spigot plugins, rsync them into LOCAL_PLUGIN_REPO
-cp ${LOCAL_PLUGIN_REPO}/* ${PLUGIN_DIR}/
+# NB: anything also fetched from Modrinth below should NOT be left here -- the Modrinth
+#     step prunes older copies of the same plugin, so a stale jar here is just wasted work.
+if [ -n "$(ls -A ${LOCAL_PLUGIN_REPO} 2>/dev/null)" ]; then
+  cp ${LOCAL_PLUGIN_REPO}/* ${PLUGIN_DIR}/
+else
+  echo "note: ${LOCAL_PLUGIN_REPO} is empty; no hand-downloaded plugins to install"
+fi
 # Plugin:  HorseTpWithMe
 #wget https://www.spigotmc.org/resources/horsetpwithme.8186/download?version=342775 -O ${PLUGIN_DIR}/HorseTpWithMe.jar
 # Plugin:  ChopTree
 #wget https://www.spigotmc.org/resources/choptree2.67585/download?version=282300 -O ${PLUGIN_DIR}/ChopTree2.jar
+
+# Plugins hosted on Modrinth (Thizzy'z Tree Feller, ...)
+#   Unlike Spigot, Modrinth publishes per-version MC-compatibility metadata, so the
+#   correct build for the Paper version resolved above can be picked automatically
+#   rather than hand-downloaded. Space-separated Modrinth project slugs:
+MODRINTH_PLUGIN_SLUGS="thizzyz-tree-feller"
+MODRINTH_LOADER="paper"
+
+for SLUG in ${MODRINTH_PLUGIN_SLUGS}; do
+  MR_INFO=$(python3 - "$SLUG" "$LATEST_SUBVERSION" "$MODRINTH_LOADER" "$PAPER_API_USER_AGENT" <<'PY'
+import json, sys, urllib.request
+
+slug, mcver, loader, ua = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4]
+
+req = urllib.request.Request(
+    "https://api.modrinth.com/v2/project/{}/version".format(slug),
+    headers={"User-Agent": ua, "Accept": "application/json"})
+with urllib.request.urlopen(req) as r:
+    versions = json.load(r)
+
+# only builds declaring BOTH this MC version and this server loader
+cand = [v for v in versions
+        if mcver in v.get("game_versions", []) and loader in v.get("loaders", [])]
+# same stance as the Paper resolver above: stable releases only, never beta/alpha
+cand = [v for v in cand if v.get("version_type") == "release"]
+if not cand:
+    sys.exit("no release supports this MC version")
+
+cand.sort(key=lambda v: v["date_published"], reverse=True)
+best = cand[0]
+files = [f for f in best["files"] if f.get("primary")] or best["files"]
+f = files[0]
+print(best["version_number"], f["url"], f["filename"], f["hashes"]["sha512"])
+PY
+)
+
+  # a plugin lagging behind a new MC release shouldn't abort the whole build
+  if [ -z "${MR_INFO}" ]; then
+    echo "WARNING: no ${SLUG} release supports MC ${LATEST_SUBVERSION}; skipping" >&2
+    continue
+  fi
+  read -r MR_VER MR_URL MR_JAR MR_SHA <<< "${MR_INFO}"
+
+  wget -q --header="User-Agent: ${PAPER_API_USER_AGENT}" "${MR_URL}" -O "${PLUGIN_DIR}/${MR_JAR}"
+
+  # Modrinth publishes a sha512 per file; a jar that fails it is worse than absent
+  if ! echo "${MR_SHA}  ${PLUGIN_DIR}/${MR_JAR}" | sha512sum -c --quiet -; then
+    echo "ERROR: sha512 mismatch for ${MR_JAR}; discarding" >&2
+    rm -f "${PLUGIN_DIR}/${MR_JAR}"
+    continue
+  fi
+
+  # drop any older copy of the same plugin (e.g. a stale jar out of LOCAL_PLUGIN_REPO);
+  # two versions of one plugin in plugins/ is a load-order coin flip
+  MR_PREFIX="${MR_JAR%%-[0-9]*}"
+  find ${PLUGIN_DIR} -maxdepth 1 -name "${MR_PREFIX}-*.jar" ! -name "${MR_JAR}" -delete
+
+  echo "installed ${SLUG} ${MR_VER} (${MR_JAR}) for MC ${LATEST_SUBVERSION}"
+done
 
 # Plugin:  luck perms
 wget https://ci.lucko.me/job/LuckPerms/lastSuccessfulBuild/artifact/*zip*/archive.zip -O ${PLUGIN_DIR}/luckperms.zip

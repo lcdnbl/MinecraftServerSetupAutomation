@@ -54,14 +54,22 @@ Linux bash scripts and python functions to automate download, install &amp; conf
   - EssentialsX (latest GitHub release; XMPP / GeoIP / AntiBuild / Discord modules removed)
   - Vault (latest GitHub release)
   - LuckPerms (latest ci.lucko.me build; non-Bukkit/Paper platform jars removed)
+  - Modrinth-hosted plugins listed in `MODRINTH_PLUGIN_SLUGS` (default: Thizzy'z Tree
+    Feller). Modrinth publishes per-version MC compatibility, so the script picks the
+    newest *release* declaring both the resolved Paper MC version and the `paper`
+    loader, verifies it against Modrinth's published sha512, and prunes older copies
+    of the same plugin. A plugin with no compatible release warns and is skipped
+    rather than aborting the build.
   
 ## LuckPerms command to add a user to a group:
   - `/lp user <user> group add <group>`
   
 ## Manually downloaded plugins (in ${HOME}/mc/mcpluginrepo/ by default):
-  - [Thizzy'z Tree Feller](https://modrinth.com/plugin/thizzyz-tree-feller) (fell whole trees by chopping one log; supports 26.1.x, GPL-3.0)
-      - replaces the old CrisTreeCapitator, which is no longer maintained for current versions
   - HorseTpWithMe (personal preference)
+  - NB: [Thizzy'z Tree Feller](https://modrinth.com/plugin/thizzyz-tree-feller) (fell whole
+    trees by chopping one log; GPL-3.0) is no longer a manual download -- it is fetched
+    from Modrinth automatically, so do not leave a copy in mcpluginrepo/
+      - replaces the old CrisTreeCapitator, which is no longer maintained for current versions
   
 ## Keeping chunks loaded while offline (no plugin):
   - the old KeepChunks plugin is unmaintained (caps at 1.21.1), so use the vanilla
