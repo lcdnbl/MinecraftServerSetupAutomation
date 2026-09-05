@@ -5,7 +5,7 @@ Linux bash scripts and python functions to automate download, install &amp; conf
   - running this script will auto-accept the minecraft EULA, hence running this script constitutes EULA acceptance
 
 ## Usage:
-  - `./mkmcsrvr.sh [server_name] [port] [heap] [difficulty]`
+  - `./mkmcsrvr.sh [server_name] [port] [heap] [difficulty] [seed]`
       - `server_name` - omitted defaults to 'Hector'
       - `port` - omitted defaults to 25565. Give each world on a host its own port;
         two servers on 25565 will fight over the bind and the second to start fails
@@ -14,7 +14,11 @@ Linux bash scripts and python functions to automate download, install &amp; conf
         overhead against total memory
       - `difficulty` - `peaceful`, `easy`, `normal` (default) or `hard`. Case-insensitive;
         an unrecognised value aborts the script before anything is downloaded
+      - `seed` - omitted defaults to `wholy-<server_name>`, so a world stays reproducible
+        from its name alone. Pass one explicitly to recreate a known world; quote seeds
+        containing spaces
       - e.g. a second world alongside an existing one: `./mkmcsrvr.sh newworld 25566 2G hard`
+      - e.g. with an explicit seed: `./mkmcsrvr.sh newworld 25566 2G hard -4172144997902289642`
   - once script completes, run with `./run_<server_Name>.sh` - i.e. `./run_Hector.sh`
       - each world launches into its own screen named `mc_<server_name>`, so stop a
         specific one with `screen -S mc_<server_name> -X stuff "stop\n"`

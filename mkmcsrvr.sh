@@ -26,6 +26,11 @@ case "${MC_DIFFICULTY}" in
     exit 1
     ;;
 esac
+# World seed. Left unset it derives from the world name, which keeps every world
+# reproducible from its name alone; pass one explicitly to recreate a known world.
+# Quote seeds containing spaces. Minecraft takes a signed 64-bit integer literally
+# and hashes anything else, so both "-4172144997902289642" and "wholy-Hector" work.
+MC_SEED=${5:-wholy-${MC_WORLD_NAME}}
 # VANILLA_VERSION is a Paper "version group" key (see https://fill.papermc.io/v3/projects/paper).
 # The script auto-selects the newest version within the group that has a STABLE build.
 #   - Old numbering groups look like "1.19", "1.21"
@@ -411,7 +416,7 @@ echo "eula=true" >> ${MC_DIR}/eula.txt
 /bin/cat <<EOM > ${MC_DIR}/server.properties
 difficulty=${MC_DIFFICULTY}
 pvp=false
-level-seed=wholy-${MC_WORLD_NAME}
+level-seed=${MC_SEED}
 server-port=${MC_PORT}
 query.port=${MC_PORT}
 EOM
