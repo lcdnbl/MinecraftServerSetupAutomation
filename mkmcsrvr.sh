@@ -13,6 +13,19 @@ MC_PORT=${2:-25565}
 # JVM heap for the generated launch script. Sized per world, since several servers
 # sharing a host also share its RAM; total heap plus ~1G JVM overhead each must fit.
 MC_HEAP=${3:-3G}
+# World difficulty: peaceful, easy, normal or hard. Case-insensitive here; it is
+# lowercased below because server.properties expects the lowercase spelling.
+MC_DIFFICULTY=${4:-normal}
+MC_DIFFICULTY=$(echo "${MC_DIFFICULTY}" | tr '[:upper:]' '[:lower:]')
+# fail before downloading ~65MB of jars: an unrecognised value would otherwise be
+# written straight into server.properties and silently ignored by the server
+case "${MC_DIFFICULTY}" in
+  peaceful|easy|normal|hard) ;;
+  *)
+    echo "ERROR: difficulty must be peaceful, easy, normal or hard (got '${MC_DIFFICULTY}')" >&2
+    exit 1
+    ;;
+esac
 # VANILLA_VERSION is a Paper "version group" key (see https://fill.papermc.io/v3/projects/paper).
 # The script auto-selects the newest version within the group that has a STABLE build.
 #   - Old numbering groups look like "1.19", "1.21"
@@ -331,7 +344,7 @@ echo "eula=true" >> ${MC_DIR}/eula.txt
 
 #create server.properties with the few settings we care about
 /bin/cat <<EOM > ${MC_DIR}/server.properties
-difficulty=normal
+difficulty=${MC_DIFFICULTY}
 pvp=false
 level-seed=wholy-${MC_WORLD_NAME}
 server-port=${MC_PORT}
